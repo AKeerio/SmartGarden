@@ -1,37 +1,21 @@
 #include <SimpleDHT.h>
 #define dht_apin A1
-/*
-  Arduino Starter Kit example
-  Project 6 - Light Theremin
-
-  This sketch is written to accompany Project 6 in the Arduino Starter Kit
-
-  Parts required:
-  - photoresistor
-  - 10 kilohm resistor
-  - piezo
-
-  created 13 Sep 2012
-  by Scott Fitzgerald
-
-  http://www.arduino.cc/starterKit
-
-  This example code is part of the public domain.
-*/
 
 #include <Servo.h>
 Servo myServo;
 // variable to hold sensor value
 int sensorValue;
 // variable to calibrate low value
-int sensorLow = 1023;
+int sensorLow;
 // variable to calibrate high value
-int sensorHigh = 0;
+int sensorHigh;
 // LED pin
 const int ledPin = 13;
 SimpleDHT11 dht11;
 int angle;
 int moistureValue;
+const int motorPin = 9;
+const int drySoil = 100;
 
 void setup() {
   // Make the LED pin an output and turn it on
@@ -67,7 +51,9 @@ void loop() {
   // Then print it to the Serial console
   Serial.print("snesVal: ");
   Serial.println(sensorValue);
-
+  // If the soil isn't wet enough, turn the "Sprinkler" on
+  checkMotor();
+  
   // Declare the start values for the humidty sensor
     byte temperature = 0;
   byte humidity = 0;
@@ -87,3 +73,12 @@ void loop() {
   // wait for a moment
   delay(2000);
 }
+
+void checkMotor()
+{
+  if(moistureValue < drySoil)
+  {
+    digitalWrite(motorPin, HIGH);
+  }
+}
+
