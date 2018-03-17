@@ -44,13 +44,13 @@ void loop() {
   // First read the value from the grove sensor using Serial
   moistureValue = Serial.read();
   //Then print it out (also sends it on the Serial for processing)
-  Serial.print("Moisture value is: ");
-  Serial.println(moisterValue);
+  //Serial.print("Moisture value is: ");
+  Serial.write(moistureValue);
   //read the input from the light sensor and store it in a variable
   sensorValue = analogRead(A0);
   // Then print it to the Serial console
-  Serial.print("snesVal: ");
-  Serial.println(sensorValue);
+  //Serial.print("snesVal: ");
+  Serial.write(sensorValue);
   // If the soil isn't wet enough, turn the "Sprinkler" on
   checkMotor();
   
@@ -65,9 +65,9 @@ void loop() {
   }
 
   // Print out the temperature and the humidity
-  Serial.print("Sample OK: "); // This can be deleted once we are reading into processing
-  Serial.print((int)temperature); Serial.print(" *C, "); 
-  Serial.print((int)humidity); Serial.println(" H");
+  //Serial.print("Sample OK: "); // This can be deleted once we are reading into processing
+  Serial.write((int)temperature);// Serial.print(" *C, "); 
+  Serial.write((int)humidity);// Serial.println(" H");
   
   
   // wait for a moment
@@ -76,9 +76,13 @@ void loop() {
 
 void checkMotor()
 {
-  if(moistureValue < drySoil)
+  if(moistureValue > drySoil)
   {
     digitalWrite(motorPin, HIGH);
+  }
+  else
+  {
+    digitalWrite(motorPin, LOW);
   }
 }
 

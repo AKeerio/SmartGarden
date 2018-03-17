@@ -8,16 +8,24 @@ boolean backBtnPressed;
 boolean cPanelBtnPressed;
 boolean motorON;
 boolean paused;
+boolean flag1 = true;
+boolean flag2 = false;
+boolean flag3 = false;
+boolean flag4 = false;
 int numOfHumidityVals;
 int numOfLightVals;
 int numOfSoilVals;
 int time;
 
-float[] humidityData = new float[90];
-float[] lightIntensityData = new float[90];
-float[] soilData = new float[90];
 
-float reading;
+String[] humidityData = new String[90];
+String[] lightIntensityData = new String[90];
+String[] soilData = new String[90];
+
+String moistureReading;
+String lightReading;
+String humidityReading;
+String tempReading;
 
 void setup()
 {
@@ -34,12 +42,35 @@ void setup()
    numOfLightVals=0;
    numOfSoilVals=0;
    
-  //port = new Serial(this, Serial.list()[0], 9600); 
-  //port.bufferUntil(10); 
+  port = new Serial(this, Serial.list()[1], 9600); 
 }  
 
 void serialEvent(Serial p) { 
-  reading = p.read(); 
+  if (flag1 == true)
+  {
+    moistureReading = p.readStringUntil('\n'); 
+    flag1 = false;
+    flag2 = true;
+  }
+    if (flag2 == true)
+  {
+   lightReading = p.readStringUntil('\n');
+    flag2 = false;
+    flag3 = true;
+  }
+    if (flag3 == true)
+  {
+    humidityReading = p.readStringUntil('\n');
+    flag3 = false;
+    flag4 = true;
+  }
+    if (flag4 == true)
+  {
+    tempReading = p.readStringUntil('\n');
+    flag4 = false;
+    flag1 = true;
+  }
+  
 } 
 
 
@@ -250,24 +281,24 @@ void drawHumidityGraph(){
   {  
       if(numOfHumidityVals<90)
       {
-        humidityData[numOfHumidityVals]=random(-100,100);
+        humidityData[numOfHumidityVals]=humidityReading;
         numOfHumidityVals++;
       }else
       {
-        float temp[]=new float[90];
+        String temp[]=new String[90];
         for(int i=0;i<89;i++)
         {
           temp[i]=humidityData[i+1];
         }
         humidityData=temp;
-        humidityData[numOfLightVals-1]=random(-100,100);
+        humidityData[numOfLightVals-1]=humidityReading;
       }
       time = millis();
   }
   
   float lineWidth = (float) width/(100);
     for (int i=0; i<numOfHumidityVals-1; i++) {
-      line(i*lineWidth+rectX, humidityData[i]+rectY+rectH/2, (i+1)*lineWidth+rectX, humidityData[i+1]+rectY+rectH/2);
+      line(i*lineWidth+rectX, float(humidityData[i])+rectY+rectH/2, (i+1)*lineWidth+rectX, float(humidityData[i+1])+rectY+rectH/2);
     }
 }
 
@@ -293,22 +324,22 @@ void drawLightIntesityGraph(){
    {
     if(numOfLightVals<90)
     {
-      lightIntensityData[numOfLightVals]=random(-100,100);
+      lightIntensityData[numOfLightVals]=lightReading;
       numOfLightVals++;
     }else
     {
-      float temp[]=new float[90];
+      String temp[]=new String[90];
       for(int i=0;i<89;i++)
       {
         temp[i]=lightIntensityData[i+1];
       }
       lightIntensityData=temp;
-      lightIntensityData[numOfLightVals-1]=random(-100,100);
+      lightIntensityData[numOfLightVals-1]=lightReading;
     }
    }
   float lineWidth = (float) width/(100);
   for (int i=0; i<numOfLightVals-1; i++) {
-    line(i*lineWidth+rectX, lightIntensityData[i]+rectY+rectH/2, (i+1)*lineWidth+rectX, lightIntensityData[i+1]+rectY+rectH/2);
+    line(i*lineWidth+rectX, float(lightIntensityData[i])+rectY+rectH/2, (i+1)*lineWidth+rectX, float(lightIntensityData[i+1])+rectY+rectH/2);
   }
 }
 
@@ -334,23 +365,23 @@ if(!paused)
 {
     if(numOfSoilVals<90)
     {
-      soilData[numOfSoilVals]=random(-100,100);
+      soilData[numOfSoilVals]=moistureReading;
       numOfSoilVals++;
     }else
     {
-      float temp[]=new float[90];
+      String temp[]=new String[90];
       for(int i=0;i<89;i++)
       {
         temp[i]=soilData[i+1];
       }
       soilData=temp;
-      soilData[numOfLightVals-1]=random(-100,100);
+      soilData[numOfLightVals-1]=moistureReading;
     }
 
 }
   float lineWidth = (float) width/(100);
   for (int i=0; i<numOfSoilVals-1; i++) {
-    line(i*lineWidth+rectX, soilData[i]+rectY+rectH/2, (i+1)*lineWidth+rectX, soilData[i+1]+rectY+rectH/2);
+    line(i*lineWidth+rectX, float(soilData[i])+rectY+rectH/2, (i+1)*lineWidth+rectX, float(soilData[i+1])+rectY+rectH/2);
   }
 }
 
