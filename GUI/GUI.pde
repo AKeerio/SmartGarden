@@ -1,100 +1,104 @@
 import processing.serial.*;
+import org.gicentre.utils.stat.*;
 
 Serial port;
 
+boolean atMainMenu;
 boolean graphsBtnPressed;
 boolean historyBtnPressed;
-boolean backBtnPressed;
 boolean cPanelBtnPressed;
 boolean motorON;
 boolean paused;
-boolean flag1 = true;
-boolean flag2 = false;
-boolean flag3 = false;
-boolean flag4 = false;
-boolean readInNull = false;
+
+boolean flag1;
+boolean flag2;
+boolean flag3;
+boolean flag4;
+
 int numOfHumidityVals;
 int numOfLightVals;
 int numOfSoilVals;
+int numOfTempVals;
 int time;
 
-
-String[] humidityData = new String[90];
-String[] lightIntensityData = new String[90];
-String[] soilData = new String[90];
+float[] axisX;
+float[] humidityData       = new float[100];
+float[] lightIntensityData = new float[100];
+float[] soilData           = new float[100];
+float[] tempData           = new float[100];
 
 String moistureReading;
 String lightReading;
 String humidityReading;
 String tempReading;
 
+XYChart lightIntensityChart;
+XYChart humidityChart;
+XYChart soilChart;
+XYChart tempChart;
+
 void setup()
 {
    surface.setTitle("Graphs");
    size(1024,720);
    time = millis();
-   graphsBtnPressed=false;
-   historyBtnPressed=false;
-   backBtnPressed=false;
-   cPanelBtnPressed=false;
-   paused=false;
-   motorON=false;
-   numOfHumidityVals=0;
-   numOfLightVals=0;
-   numOfSoilVals=0;
-   printArray(Serial.list());
-   String portName = Serial.list()[1];
-  port = new Serial(this, portName, 9600); 
- // port.buffer(4); 
+   
+   atMainMenu        = true;
+   graphsBtnPressed  = false;
+   historyBtnPressed = false;
+   cPanelBtnPressed  = false;
+   paused            = false;
+   motorON           = false;
+   
+   flag1 = true;
+   flag2 = false;
+   flag3 = false;
+   flag4 = false;
+      
+   lightIntensityChart = new XYChart(this);
+   humidityChart       = new XYChart(this);
+   soilChart           = new XYChart(this);
+   tempChart           = new XYChart(this);
+   
+   numOfHumidityVals = 0;
+   numOfLightVals    = 0;
+   numOfSoilVals     = 0; 
+   
+   axisX=new float[100];
+   for(int i=0;i<axisX.length;i++)
+   {
+     axisX[i]=i*1;
+   }
+   
+   port = new Serial(this, Serial.list()[1], 9600); 
 }  
 
-void serialEvent(Serial p) { 
-  boolean isAdded = false;
-  String valueRead = p.readStringUntil('\n');
-  if (valueRead == null)
+void serialEvent(Serial p) {  
+  if (flag1 == true)
   {
-     isAdded = true;
-  }
-  
-  else if (flag1 == true && isAdded == false)
-  {
-    isAdded = true;
-    moistureReading = valueRead; 
-    print("Flag 1 is: ");
-    println(moistureReading);
+    moistureReading = p.readStringUntil('\n'); 
     flag1 = false;
     flag2 = true;
   }
-   else if (flag2 == true && isAdded == false)
+  if (flag2 == true)
   {
-    isAdded = true;
-   lightReading = valueRead;
-   print("Flag 2 is: ");
-   println(lightReading);
+   lightReading = p.readStringUntil('\n');
     flag2 = false;
     flag3 = true;
   }
-   else if (flag3 == true && isAdded == false)
+  if (flag3 == true)
   {
-   isAdded = true;
-    humidityReading = valueRead;
-    print("Flag 3 is: ");
-     println(humidityReading);
+   humidityReading = p.readStringUntil('\n');
     flag3 = false;
     flag4 = true;
   }
-  else if (flag4 == true && isAdded == false)
+  if (flag4 == true)
   {
-    isAdded = true;
-    tempReading = valueRead;
-    print("Flag 4 is: ");
-    println(tempReading);
+    tempReading = p.readStringUntil('\n');
     flag4 = false;
-    flag1 = true;
+  flag1 = true;
   }
-  
-} 
-
+ } 
 
 void draw()
 {
@@ -102,29 +106,33 @@ void draw()
     fill(0);
     textSize(50);
     text("(IoT) Automated Irrigation System", 100, 150);
-    drawGraphsBtn(); 
-    drawHistoryBtn();
-    drawCPanelBtn();
-    
-    if(graphsBtnPressed  && !backBtnPressed)
+    button(400,260,200,200,65,90," View \ngraphs","graph");
+    button(700,260,200,200,65,90," View \nHistory","history");
+    button(100,260,200,200,65,90,"Control \n Panel","cpanel");
+
+    if(graphsBtnPressed  && !atMainMenu)
     {
       background(255);
       drawBackBtn(graphsBtnPressed);
       drawPauseBtn();
+      stroke(200);
+      line(width/2,50,width/2,height);
+      stroke(200);
+      line(0,height/2,width,height/2);
       drawHumidityGraph();
       drawSoilSensorGraph();
       drawLightIntesityGraph();
+      drawTempSensorGraph();
     }
-  
-  
-    if(historyBtnPressed  && !backBtnPressed)
+
+    if(historyBtnPressed  && !atMainMenu)
     {
       background(255);
       drawBackBtn(historyBtnPressed);
+      //graphTest();
     }
-    
-    
-    if(cPanelBtnPressed  && !backBtnPressed)
+     
+    if(cPanelBtnPressed  && !atMainMenu)
     {
       background(255);
       drawBackBtn(cPanelBtnPressed);
@@ -134,87 +142,49 @@ void draw()
     
 }
 
-
-void drawGraphsBtn()
+void button(int rectX,int rectY, int rectW,int rectH, int txtOffsetX, int txtOffsetY, String name, String id)
 {
-    int rectX=400;
-    int rectY=260;
-    int rectW = 200;
-    int rectH=200;
-    if(mouseX>=rectX && mouseX<=rectX+rectW && mouseY>=rectY && mouseY<=rectY+rectH)
+  if(mouseX>=rectX && mouseX<=rectX+rectW && mouseY>=rectY && mouseY<=rectY+rectH)
     {
       fill(0, 102, 153, 51);
       rect(rectX, rectY, rectW, rectH, 10, 10, 10, 10);
       fill(255);
       textSize(20);
-      text(" View \ngraphs", rectX+65, rectY+90);
-      if(mousePressed)
-      {
-          graphsBtnPressed=true;
-          backBtnPressed=false;
-      }
+      text(name, rectX+txtOffsetX, rectY+txtOffsetY);
+      if(mousePressed&&atMainMenu)
+      {       
+        if(id=="graph")
+        {
+            graphsBtnPressed=true; 
+            historyBtnPressed=false;
+            cPanelBtnPressed=false;
+        }
+        
+        if(id=="history")
+        {
+          graphsBtnPressed=false; 
+            historyBtnPressed=true;
+            cPanelBtnPressed=false;
+        }
+        
+        if(id=="cpanel")
+        {
+          graphsBtnPressed=false; 
+            historyBtnPressed=false;
+            cPanelBtnPressed=true;
+        }
+          atMainMenu=false;
+          atMainMenu=false;
+       }
     }else
     { 
       fill(0, 102, 153);
       rect(rectX, rectY, 200, 200, 10, 10, 10, 10);
       fill(255);
       textSize(20);
-      text(" View \ngraphs", rectX+65, rectY+90);
+      text(name, rectX+65, rectY+90);
     }
-}
-
-void drawHistoryBtn(){
-    int rectX=700;
-    int rectY=260;
-    int rectW = 200;
-    int rectH=200;
- if(mouseX>=rectX && mouseX<=rectX+rectW && mouseY>=rectY && mouseY<=rectY+rectH)
-    {
-      fill(0, 102, 153, 51);
-      rect(rectX, rectY, rectW, rectH, 10, 10, 10, 10);
-      fill(255);
-      textSize(20);
-      text(" View \nHistory", rectX+65, rectY+90);
-      if(mousePressed)
-      {
-          historyBtnPressed=true;
-          backBtnPressed=false;
-      }
-    }else
-    { 
-      fill(0, 102, 153);
-      rect(rectX, rectY, 200, 200, 10, 10, 10, 10);
-      fill(255);
-      textSize(20);
-      text(" View \nHistory", rectX+65, rectY+90);
-    }
-}
-
-void drawCPanelBtn(){
-    int rectX=100;
-    int rectY=260;
-    int rectW = 200;
-    int rectH=200;
- if(mouseX>=rectX && mouseX<=rectX+rectW && mouseY>=rectY && mouseY<=rectY+rectH)
-    {
-      fill(0, 102, 153, 51);
-      rect(rectX, rectY, rectW, rectH, 10, 10, 10, 10);
-      fill(255);
-      textSize(20);
-      text("Control \n Panel", rectX+65, rectY+90);
-      if(mousePressed)
-      {
-          cPanelBtnPressed=true;
-          backBtnPressed=false;
-      }
-    }else
-    { 
-      fill(0, 102, 153);
-      rect(rectX, rectY, 200, 200, 10, 10, 10, 10);
-      fill(255);
-      textSize(20);
-      text("Control \n Panel", rectX+65, rectY+90);
-    }
+  
 }
 
 void drawBackBtn(boolean lastButtonPressed){
@@ -231,13 +201,14 @@ void drawBackBtn(boolean lastButtonPressed){
       text("Back", rectX+30, rectY+20);
       if(mousePressed)
       {
-        backBtnPressed=true;
+        atMainMenu=true;
         if(lastButtonPressed==graphsBtnPressed)
               graphsBtnPressed=false;
         else if(lastButtonPressed==historyBtnPressed)
               historyBtnPressed=false;
         else if(lastButtonPressed==cPanelBtnPressed)
               cPanelBtnPressed=false;
+              atMainMenu=true;
       }
     }
     else
@@ -278,133 +249,164 @@ void drawPauseBtn(){
       textSize(18);
       text("Pause", rectX+25, rectY+20);
     }
+   
 }
 
 void drawHumidityGraph(){
-  int rectX =50;
+  int rectX =20;
   int rectY = 50;
-  int rectW =920;
-  int rectH=200;
   fill(0);
   textSize(15);
-  text("Humidity", rectX, rectY-10);
+  text("Humidity", rectX, rectY);
   fill(255);
-  rect(rectX, rectY, rectW, rectH);
-  //line(rectX+rectW/2, rectY, rectX+rectW/2,rectY+rectH);
-  line(rectX, rectY+rectH/2,rectX+rectW, rectY+rectH/2);
-  
-  fill(0);
-  textSize(15);
-  text("4 \n3 \n2 \n1 \n0", rectX-10, rectY+8);
-  text("\n-1 \n-2 \n-3 \n-4", rectX-18, rectH-48);
-
-  
-  if (millis() > time + 100 && !paused)
-  {  
-      if(numOfHumidityVals<90)
+  if(!paused)
+   {
+    if(numOfHumidityVals<100)
+    {
+      humidityData[numOfHumidityVals]=Float.parseFloat(humidityReading);
+      numOfHumidityVals++;
+    }else
+    {
+      float temp[]=new float[100];
+      for(int i=0;i<99;i++)
       {
-        humidityData[numOfHumidityVals]=humidityReading;
-        numOfHumidityVals++;
-      }else
-      {
-        String temp[]=new String[90];
-        for(int i=0;i<89;i++)
-        {
-          temp[i]=humidityData[i+1];
-        }
-        humidityData=temp;
-        humidityData[numOfLightVals-1]=humidityReading;
+        temp[i]=humidityData[i+1];
       }
-      time = millis();
-  }
-  
-  float lineWidth = (float) width/(100);
-    for (int i=0; i<numOfHumidityVals-1; i++) {
-      line(i*lineWidth+rectX, float(humidityData[i])+rectY+rectH/2, (i+1)*lineWidth+rectX, float(humidityData[i+1])+rectY+rectH/2);
+      humidityData=temp;
+      humidityData[numOfHumidityVals-1]=Float.parseFloat(humidityReading);
     }
+    
+     humidityChart.setData(axisX, humidityData); 
+   }
+   
+ // lineChart.showXAxis(true); 
+  humidityChart.showYAxis(true); 
+  humidityChart.setMinY(0);
+  
+  // Symbol colours
+  humidityChart.setPointColour(color(180,50,50,100));
+  humidityChart.setPointSize(5);
+  humidityChart.setLineWidth(2);
+  humidityChart.draw(rectX,rectY,width/2-30,height/2-70);
 }
 
+
 void drawLightIntesityGraph(){
-  int rectX =50;
-  int rectY = 280;
-  int rectW =920;
-  int rectH=200;
+  int rectX =width/2+15;
+  int rectY = 50;
   fill(0);
   textSize(15);
-  text("Soil moisture", rectX, rectY-10);
+  text("Light Intensity", rectX, rectY);
   fill(255);
-  rect(rectX, rectY, rectW, rectH);
-  //line(rectX+rectW/2, rectY, rectX+rectW/2,rectY+rectH);
-  line(rectX, rectY+rectH/2,rectX+rectW, rectY+rectH/2);
-  
-  fill(0);
-  textSize(15);
-  text("4 \n3 \n2 \n1 \n0", rectX-10, rectY+8);
-  text("\n-1 \n-2 \n-3 \n-4", rectX-18, rectY+rectH/2);
-   
-   if(!paused)
+  if(!paused)
    {
-    if(numOfLightVals<90)
+    if(numOfLightVals<100)
     {
-      lightIntensityData[numOfLightVals]=lightReading;
+      lightIntensityData[numOfLightVals]=Float.parseFloat(lightReading);
       numOfLightVals++;
     }else
     {
-      String temp[]=new String[90];
-      for(int i=0;i<89;i++)
+      float temp[]=new float[100];
+      for(int i=0;i<99;i++)
       {
         temp[i]=lightIntensityData[i+1];
       }
       lightIntensityData=temp;
-      lightIntensityData[numOfLightVals-1]=lightReading;
+      lightIntensityData[numOfLightVals-1]=Float.parseFloat(lightReading);
     }
+    
+     lightIntensityChart.setData(axisX, lightIntensityData); 
    }
-  float lineWidth = (float) width/(100);
-  for (int i=0; i<numOfLightVals-1; i++) {
-    line(i*lineWidth+rectX, float(lightIntensityData[i])+rectY+rectH/2, (i+1)*lineWidth+rectX, float(lightIntensityData[i+1])+rectY+rectH/2);
-  }
+   
+ // lineChart.showXAxis(true); 
+  lightIntensityChart.showYAxis(true); 
+  lightIntensityChart.setMinY(0);
+  
+  // Symbol colours
+  lightIntensityChart.setPointColour(color(180,50,50,100));
+  lightIntensityChart.setPointSize(5);
+  lightIntensityChart.setLineWidth(2);
+  lightIntensityChart.draw(rectX,rectY,width/2-30,height/2-70);
 }
 
 void drawSoilSensorGraph(){  
-  int rectX =50;
-  int rectY = 510;
-  int rectW =920;
-  int rectH=200;
+  int rectX =20;
+  int rectY = height/2+20;
+
   fill(0);
   textSize(15);
-  text("Light intensity", rectX, rectY-10);
+  text("Soil Moisture", rectX, rectY);
   fill(255);
-  rect(rectX, rectY, rectW, rectH);
-  //line(rectX+rectW/2, rectY, rectX+rectW/2,rectY+rectH);
-  line(rectX, rectY+rectH/2,rectX+rectW, rectY+rectH/2);  
-   
-  fill(0);
-  textSize(15);
-  text("1000 \n800 \n600 \n400 \n200 \n0", rectX-10, rectY+8);
- // text("\n-1 \n-2 \n-3 \n-4", rectX-18, rectY+rectH/2);
-  
-if(!paused)
-{
-    if(numOfSoilVals<90)
+
+  if(!paused)
+   {
+    if(numOfSoilVals<100)
     {
-      soilData[numOfSoilVals]=moistureReading;
+      soilData[numOfSoilVals]=Float.parseFloat(moistureReading);
       numOfSoilVals++;
     }else
     {
-      String temp[]=new String[90];
-      for(int i=0;i<89;i++)
+      float temp[]=new float[100];
+      for(int i=0;i<99;i++)
       {
         temp[i]=soilData[i+1];
       }
       soilData=temp;
-      soilData[numOfLightVals-1]=moistureReading;
+      soilData[numOfSoilVals-1]=Float.parseFloat(moistureReading);
     }
-
+    
+     soilChart.setData(axisX, soilData); 
+   }
+   
+ // lineChart.showXAxis(true); 
+  soilChart.showYAxis(true); 
+  soilChart.setMinY(0);
+  
+  // Symbol colours
+  soilChart.setPointColour(color(180,50,50,100));
+  soilChart.setPointSize(5);
+  soilChart.setLineWidth(2);
+  soilChart.draw(rectX,rectY,width/2-30,height/2-70);
 }
-  float lineWidth = (float) width/(100);
-  for (int i=0; i<numOfSoilVals-1; i++) {
-    line(i*lineWidth+rectX, float(soilData[i])+rectY+rectH/2, (i+1)*lineWidth+rectX, float(soilData[i+1])+rectY+rectH/2);
-  }
+
+void drawTempSensorGraph(){  
+  int rectX =width/2+20;
+  int rectY = height/2+20;
+
+  fill(0);
+  textSize(15);
+  text("Temperature", rectX, rectY);
+  fill(255);
+
+  if(!paused)
+   {
+    if(numOfTempVals<100)
+    {
+      tempData[numOfTempVals]=Float.parseFloat(tempReading);
+      numOfTempVals++;
+    }else
+    {
+      float temp[]=new float[100];
+      for(int i=0;i<99;i++)
+      {
+        temp[i]=tempData[i+1];
+      }
+      tempData=temp;
+      tempData[numOfTempVals-1]=Float.parseFloat(tempReading);
+    }
+    
+     tempChart.setData(axisX, tempData); 
+   }
+   
+ // lineChart.showXAxis(true); 
+  tempChart.showYAxis(true); 
+  tempChart.setMinY(0);
+  
+  // Symbol colours
+  tempChart.setPointColour(color(180,50,50,100));
+  tempChart.setPointSize(5);
+  tempChart.setLineWidth(2);
+  tempChart.draw(rectX,rectY,width/2-30,height/2-70);
 }
 
 void drawMotorBtn()
