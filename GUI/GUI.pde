@@ -19,7 +19,12 @@ int numOfHumidityVals;
 int numOfLightVals;
 int numOfSoilVals;
 int numOfTempVals;
-int time;
+
+int delayHumidity;
+int delayLight;
+int delaySoil;
+int delayTemp;
+int delayPause;
 
 float[] axisX;
 float[] humidityData       = new float[100];
@@ -37,11 +42,19 @@ XYChart humidityChart;
 XYChart soilChart;
 XYChart tempChart;
 
+  
+Table historyTable;
+
 void setup()
 {
    surface.setTitle("Graphs");
    size(1024,720);
-   time = millis();
+   smooth();
+   delayHumidity = millis();
+   delayLight    = millis();
+   delaySoil     = millis();
+   delayTemp     = millis();
+   delayPause    = millis();
    
    atMainMenu        = true;
    graphsBtnPressed  = false;
@@ -70,35 +83,58 @@ void setup()
      axisX[i]=i*1;
    }
    
-   port = new Serial(this, Serial.list()[1], 9600); 
+   historyTable=new Table();
+   printArray(Serial.list());
+   String portName = Serial.list()[1];
+   port = new Serial(this, portName, 9600); 
 }  
 
-void serialEvent(Serial p) {  
-  if (flag1 == true)
+void serialEvent(Serial p) { 
+  boolean isAdded = false;
+  String valueRead = p.readStringUntil('\n');
+  if (valueRead == null)
   {
-    moistureReading = p.readStringUntil('\n'); 
+     isAdded = true;
+  }
+  
+  else if (flag1 == true && isAdded == false)
+  {
+    isAdded = true;
+    moistureReading = valueRead; 
+    print("Flag 1 is: ");
+    println(moistureReading);
     flag1 = false;
     flag2 = true;
   }
-  if (flag2 == true)
+   else if (flag2 == true && isAdded == false)
   {
-   lightReading = p.readStringUntil('\n');
+    isAdded = true;
+   lightReading = valueRead;
+   print("Flag 2 is: ");
+   println(lightReading);
     flag2 = false;
     flag3 = true;
   }
-  if (flag3 == true)
+   else if (flag3 == true && isAdded == false)
   {
-   humidityReading = p.readStringUntil('\n');
+   isAdded = true;
+    humidityReading = valueRead;
+    print("Flag 3 is: ");
+     println(humidityReading);
     flag3 = false;
     flag4 = true;
   }
-  if (flag4 == true)
+  else if (flag4 == true && isAdded == false)
   {
-    tempReading = p.readStringUntil('\n');
+    isAdded = true;
+    tempReading = valueRead;
+    print("Flag 4 is: ");
+    println(tempReading);
     flag4 = false;
-  flag1 = true;
+    flag1 = true;
   }
- } 
+  
+}  
 
 void draw()
 {
@@ -129,7 +165,7 @@ void draw()
     {
       background(255);
       drawBackBtn(historyBtnPressed);
-      //graphTest();
+      drawTable();
     }
      
     if(cPanelBtnPressed  && !atMainMenu)
@@ -188,7 +224,7 @@ void button(int rectX,int rectY, int rectW,int rectH, int txtOffsetX, int txtOff
 }
 
 void drawBackBtn(boolean lastButtonPressed){
-    int rectX=870;
+    int rectX=910;
     int rectY=10;
     int rectW =100;
     int rectH = 30;
@@ -222,7 +258,7 @@ void drawBackBtn(boolean lastButtonPressed){
 }
 
 void drawPauseBtn(){
-    int rectX=750;
+    int rectX=800;
     int rectY=10;
     int rectW =100;
     int rectH = 30;
@@ -233,12 +269,15 @@ void drawPauseBtn(){
       fill(255);
       textSize(18);
       text("Pause", rectX+25, rectY+20);
-      if(mousePressed)
+      delayPause=millis()-delayPause;
+      if(mousePressed&&delayPause>100)
       {
         if(paused)
         paused=false;
         else
         paused=true;
+        
+        delayPause=millis();
       }
     }
     else
@@ -259,7 +298,8 @@ void drawHumidityGraph(){
   textSize(15);
   text("Humidity", rectX, rectY);
   fill(255);
-  if(!paused)
+  delayHumidity=millis()-delayHumidity;
+  if(!paused && delayHumidity>100)
    {
     if(numOfHumidityVals<100)
     {
@@ -277,6 +317,7 @@ void drawHumidityGraph(){
     }
     
      humidityChart.setData(axisX, humidityData); 
+     delayHumidity=millis();
    }
    
  // lineChart.showXAxis(true); 
@@ -409,9 +450,23 @@ void drawTempSensorGraph(){
   tempChart.draw(rectX,rectY,width/2-30,height/2-70);
 }
 
+void drawTable()
+{
+  historyTable.addColumn("Ref#");
+  historyTable.addColumn("Date/Time");
+  historyTable.addColumn("Device");
+  historyTable.addColumn("Duration");
+  
+  TableRow newRow = historyTable.addRow();
+  newRow.setInt("Ref#", historyTable.lastRowIndex());
+  newRow.setString("Date/Time", "Today");
+  newRow.setString("Device", "Motor 1");
+  newRow.setString("Duration", "60");
+}
+
+
 void drawMotorBtn()
 {
-
     int rectX=100;
     int rectY=110;
     int rectW = 100;
@@ -439,7 +494,7 @@ void drawMotorBtn()
         }
       }
     
-    int rectX2=rectX+rectW;
+    int rectX2=rectX+rectW-1;
     int rectY2=rectY;
     int rectW2 = 100;
     int rectH2=50;
