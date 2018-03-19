@@ -12,6 +12,7 @@ boolean flag1 = true;
 boolean flag2 = false;
 boolean flag3 = false;
 boolean flag4 = false;
+boolean readInNull = false;
 int numOfHumidityVals;
 int numOfLightVals;
 int numOfSoilVals;
@@ -41,32 +42,53 @@ void setup()
    numOfHumidityVals=0;
    numOfLightVals=0;
    numOfSoilVals=0;
-   
-  port = new Serial(this, Serial.list()[1], 9600); 
+   printArray(Serial.list());
+   String portName = Serial.list()[1];
+  port = new Serial(this, portName, 9600); 
+ // port.buffer(4); 
 }  
 
 void serialEvent(Serial p) { 
-  if (flag1 == true)
+  boolean isAdded = false;
+  String valueRead = p.readStringUntil('\n');
+  if (valueRead == null)
   {
-    moistureReading = p.readStringUntil('\n'); 
+     isAdded = true;
+  }
+  
+  else if (flag1 == true && isAdded == false)
+  {
+    isAdded = true;
+    moistureReading = valueRead; 
+    print("Flag 1 is: ");
+    println(moistureReading);
     flag1 = false;
     flag2 = true;
   }
-    if (flag2 == true)
+   else if (flag2 == true && isAdded == false)
   {
-   lightReading = p.readStringUntil('\n');
+    isAdded = true;
+   lightReading = valueRead;
+   print("Flag 2 is: ");
+   println(lightReading);
     flag2 = false;
     flag3 = true;
   }
-    if (flag3 == true)
+   else if (flag3 == true && isAdded == false)
   {
-    humidityReading = p.readStringUntil('\n');
+   isAdded = true;
+    humidityReading = valueRead;
+    print("Flag 3 is: ");
+     println(humidityReading);
     flag3 = false;
     flag4 = true;
   }
-    if (flag4 == true)
+  else if (flag4 == true && isAdded == false)
   {
-    tempReading = p.readStringUntil('\n');
+    isAdded = true;
+    tempReading = valueRead;
+    print("Flag 4 is: ");
+    println(tempReading);
     flag4 = false;
     flag1 = true;
   }
@@ -358,8 +380,8 @@ void drawSoilSensorGraph(){
    
   fill(0);
   textSize(15);
-  text("4 \n3 \n2 \n1 \n0", rectX-10, rectY+8);
-  text("\n-1 \n-2 \n-3 \n-4", rectX-18, rectY+rectH/2);
+  text("1000 \n800 \n600 \n400 \n200 \n0", rectX-10, rectY+8);
+ // text("\n-1 \n-2 \n-3 \n-4", rectX-18, rectY+rectH/2);
   
 if(!paused)
 {

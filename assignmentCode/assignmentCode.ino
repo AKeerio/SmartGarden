@@ -16,12 +16,14 @@ int angle;
 int moistureValue;
 const int motorPin = 9;
 const int drySoil = 100;
+    byte temperature;
+  byte humidity;
 
 void setup() {
   // Make the LED pin an output and turn it on
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, HIGH);
-  myServo.attach(8);
+ // myServo.attach(8);
 
   // calibrate for the first five seconds after program runs
   while (millis() < 5000) {
@@ -42,35 +44,35 @@ void setup() {
 
 void loop() {
   // First read the value from the grove sensor using Serial
+  
   moistureValue = Serial.read();
   //Then print it out (also sends it on the Serial for processing)
-  //Serial.print("Moisture value is: ");
-  Serial.write(moistureValue);
+ // Serial.print("Moisture value is: ");
+  Serial.println(moistureValue);
   //read the input from the light sensor and store it in a variable
   sensorValue = analogRead(A0);
   // Then print it to the Serial console
-  //Serial.print("snesVal: ");
-  Serial.write(sensorValue);
+ // Serial.print("snesVal: ");
+  Serial.println(sensorValue);
   // If the soil isn't wet enough, turn the "Sprinkler" on
   checkMotor();
   
   // Declare the start values for the humidty sensor
-    byte temperature = 0;
-  byte humidity = 0;
+
   int err = SimpleDHTErrSuccess;
   //dht11.read is the function to read in the values, just printing at the moment
   if ((err = dht11.read(dht_apin, &temperature, &humidity, NULL)) != SimpleDHTErrSuccess) {
-    Serial.print("Read DHT11 failed, err="); Serial.println(err);delay(1000);
-    return;
+   // Serial.print("Read DHT11 failed, err="); Serial.println(err);delay(1000);
+   // return;
   }
 
   // Print out the temperature and the humidity
   //Serial.print("Sample OK: "); // This can be deleted once we are reading into processing
-  Serial.write((int)temperature);// Serial.print(" *C, "); 
-  Serial.write((int)humidity);// Serial.println(" H");
+  Serial.println((int)temperature);// Serial.print(" *C, "); 
+  Serial.println((int)humidity);// Serial.println(" H");
   
   
-  // wait for a moment
+  // has to be 2 seconds or the dht won't work properly
   delay(2000);
 }
 
@@ -78,11 +80,11 @@ void checkMotor()
 {
   if(moistureValue > drySoil)
   {
-    digitalWrite(motorPin, HIGH);
+ //   digitalWrite(motorPin, HIGH);
   }
   else
   {
-    digitalWrite(motorPin, LOW);
+//    digitalWrite(motorPin, LOW);
   }
 }
 
