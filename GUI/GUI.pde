@@ -35,7 +35,6 @@ ArrayList<String> humidityList;
 ArrayList<String> lightIntensityList;
 ArrayList<String> soilList;
 ArrayList<String> tempList;
-PVector temp;
 
 String moistureReading;
 String lightReading;
@@ -49,12 +48,11 @@ XYChart tempChart;
 
 void setup()
 {
-  temp=new PVector();
    surface.setTitle("Graphs");
    size(1024,720);
    smooth();
    
-   ///MQTT Setup
+   //MQTT Setup
    client = new MQTTClient(this);
    client.connect("mqtt://10.65.194.51:9003", "Sensor1");
    
@@ -121,7 +119,7 @@ void serialEvent(Serial p) {
     isAdded = true;
     moistureReading = valueRead; 
     
-    if(!moistureReading.equals(soilList.get(0)));
+    if(!moistureReading.equals(soilList.get(0))&&!paused);
       soilList.add(0,moistureReading);
     
     client.publish("moisture", moistureReading);
@@ -135,7 +133,7 @@ void serialEvent(Serial p) {
     isAdded = true;
    lightReading = valueRead;
    
-   if(!lightReading.equals(lightIntensityList.get(0)))
+   if(!lightReading.equals(lightIntensityList.get(0))&&!paused)
      lightIntensityList.add(0,lightReading);
      
    client.publish("light", lightReading);
@@ -149,7 +147,7 @@ void serialEvent(Serial p) {
     isAdded = true;
     humidityReading = valueRead;
     
-    if(!humidityReading.equals(humidityList.get(0)))
+    if(!humidityReading.equals(humidityList.get(0))&&!paused)
       humidityList.add(0,humidityReading);
     
     client.publish("humidity", humidityReading);
@@ -163,7 +161,7 @@ void serialEvent(Serial p) {
     isAdded = true;
     tempReading = valueRead;
     
-    if(!tempReading.equals(tempList.get(0)));
+    if(!tempReading.equals(tempList.get(0))&&!paused);
       tempList.add(0,tempReading);
     
     client.publish("temp", tempReading);
@@ -204,7 +202,7 @@ void draw()
     {
       background(255);
       drawBackBtn(historyBtnPressed);
-
+      drawPauseBtn();
       drawSensorHistory();
     }
      
@@ -306,8 +304,7 @@ void drawPauseBtn(){
       fill(255);
       textSize(18);
       text("Pause", rectX+25, rectY+20);
-      delayPause=millis()-delayPause;
-      if(mousePressed&&delayPause>100)
+      if(mousePressed&&millis()-delayPause>200)
       {
         if(paused)
         paused=false;
@@ -381,7 +378,7 @@ void drawLightIntesityGraph(){
     
      lightIntensityChart.setData(axisX, lightIntensityData); 
    }
-   
+    
   lightIntensityChart.showYAxis(true); 
   lightIntensityChart.setMinY(0);
   
@@ -477,14 +474,16 @@ void drawSensorHistory()
       text("Time", 930, 75); 
       
       //For testing history window
-      /*humidityList.add(0,random(0,500)+"");
+      /*if(!paused)
+      {
+      humidityList.add(0,random(0,500)+"");
       lightIntensityList.add(0,random(0,1000)+"");
       soilList.add(0,random(0,100)+"");
       tempList.add(0,random(0,30)+"");
-            */
+      }
+  */
       if(tempList.size()>40)
       tempList.remove(40);
-      //tempList.subList(40, tempList.size()).clear(); 
       for(int i=0;i<tempList.size();i++)
       {
         text(tempList.get(i), 50, 100+(i*15)); 
@@ -506,11 +505,11 @@ void drawSensorHistory()
       
       if(soilList.size()>40)
       soilList.remove(40); 
+      
       for(int i=0;i<soilList.size();i++)
       {
         text(soilList.get(i), 530, 100+(i*15)); 
       }   
-      
 }
 
 void drawMotorBtn()
