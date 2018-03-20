@@ -1,7 +1,9 @@
 import processing.serial.*;
 import org.gicentre.utils.stat.*;
+import mqtt.*;
 
 Serial port;
+MQTTClient client;
 
 boolean atMainMenu;
 boolean graphsBtnPressed;
@@ -47,6 +49,10 @@ Table historyTable;
 
 void setup()
 {
+   //MQTT Setup
+   client = new MQTTClient(this);
+   client.connect("mqtt://10.65.194.51:9003", "Sensor1");
+
    surface.setTitle("Graphs");
    size(1024,720);
    smooth();
@@ -85,7 +91,7 @@ void setup()
    
    historyTable=new Table();
    printArray(Serial.list());
-   String portName = Serial.list()[1];
+   String portName = Serial.list()[0];
    port = new Serial(this, portName, 9600); 
 }  
 
@@ -101,6 +107,7 @@ void serialEvent(Serial p) {
   {
     isAdded = true;
     moistureReading = valueRead; 
+    client.publish("moisture", moistureReading);
     print("Flag 1 is: ");
     println(moistureReading);
     flag1 = false;
@@ -110,6 +117,7 @@ void serialEvent(Serial p) {
   {
     isAdded = true;
    lightReading = valueRead;
+   client.publish("light", lightReading);
    print("Flag 2 is: ");
    println(lightReading);
     flag2 = false;
@@ -119,6 +127,7 @@ void serialEvent(Serial p) {
   {
    isAdded = true;
     humidityReading = valueRead;
+    client.publish("humidity", humidityReading);
     print("Flag 3 is: ");
      println(humidityReading);
     flag3 = false;
@@ -128,6 +137,7 @@ void serialEvent(Serial p) {
   {
     isAdded = true;
     tempReading = valueRead;
+    client.publish("temp", tempReading);
     print("Flag 4 is: ");
     println(tempReading);
     flag4 = false;
