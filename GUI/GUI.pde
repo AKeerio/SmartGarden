@@ -16,6 +16,10 @@ boolean flag1;
 boolean flag2;
 boolean flag3;
 boolean flag4;
+boolean flag5;
+boolean flag6;
+boolean flag7;
+boolean flag8;
 
 int numOfHumidityVals;
 int numOfLightVals;
@@ -34,10 +38,15 @@ float[] lightIntensityData = new float[100];
 float[] soilData           = new float[100];
 float[] tempData           = new float[100];
 
-String moistureReading;
-String lightReading;
-String humidityReading;
-String tempReading;
+String moistureReading1;
+String lightReading1;
+String humidityReading1;
+String tempReading1;
+
+String moistureReading2;
+String lightReading2;
+String humidityReading2;
+String tempReading2;
 
 XYChart lightIntensityChart;
 XYChart humidityChart;
@@ -69,10 +78,14 @@ void setup()
    paused            = false;
    motorON           = false;
    
-   flag1 = true;
-   flag2 = false;
+
+   flag2 = true;
    flag3 = false;
    flag4 = false;
+   flag5 = true;
+   flag6 = false;
+   flag7 = false;
+   flag8 = false;
       
    lightIntensityChart = new XYChart(this);
    humidityChart       = new XYChart(this);
@@ -91,57 +104,97 @@ void setup()
    
    historyTable=new Table();
    printArray(Serial.list());
-   String portName = Serial.list()[0];
+   String portName = Serial.list()[3]; // Might be 0 1 or 2 on the laptops, need to check before setting up.
    port = new Serial(this, portName, 9600); 
+   
 }  
 
-void serialEvent(Serial p) { 
+void serialEvent(Serial p) {
+  
   boolean isAdded = false;
   String valueRead = p.readStringUntil('\n');
   if (valueRead == null)
   {
      isAdded = true;
   }
-  
-  else if (flag1 == true && isAdded == false)
+  else if (valueRead.charAt(0) == 'a')
+  {
+
+   if (flag2 == true && isAdded == false)
   {
     isAdded = true;
-    moistureReading = valueRead; 
-    client.publish("moisture", moistureReading);
-    print("Flag 1 is: ");
-    println(moistureReading);
-    flag1 = false;
-    flag2 = true;
-  }
-   else if (flag2 == true && isAdded == false)
-  {
-    isAdded = true;
-   lightReading = valueRead;
-   client.publish("light", lightReading);
+   lightReading1 = valueRead.substring(1);
+   client.publish("light", lightReading1);
    print("Flag 2 is: ");
-   println(lightReading);
+   println(lightReading1);
     flag2 = false;
     flag3 = true;
   }
    else if (flag3 == true && isAdded == false)
   {
    isAdded = true;
-    humidityReading = valueRead;
-    client.publish("humidity", humidityReading);
+    humidityReading1 = valueRead.substring(1);
+    client.publish("humidity", humidityReading1);
     print("Flag 3 is: ");
-     println(humidityReading);
+     println(humidityReading1);
     flag3 = false;
     flag4 = true;
   }
   else if (flag4 == true && isAdded == false)
   {
     isAdded = true;
-    tempReading = valueRead;
-    client.publish("temp", tempReading);
+    tempReading1 = valueRead.substring(1);
+    client.publish("temp", tempReading1);
     print("Flag 4 is: ");
-    println(tempReading);
+    println(tempReading1);
     flag4 = false;
-    flag1 = true;
+    flag2 = true;
+  }
+  }
+  else if (valueRead.charAt(0) == 'b')
+  {
+  
+  if (flag5 == true && isAdded == false)
+  {
+    isAdded = true;
+    moistureReading2 = valueRead.substring(1); 
+    client.publish("moisture", moistureReading2);
+    print("Flag 1 is: ");
+    println(moistureReading2);
+    flag5 = false;
+    flag6 = true;
+  }
+   else if (flag6 == true && isAdded == false)
+  {
+    isAdded = true;
+   lightReading2 = valueRead.substring(1);
+   client.publish("light", lightReading2);
+   print("Flag 2 is: ");
+   println(lightReading2);
+    flag6 = false;
+    flag7 = true;
+  }
+   else if (flag7 == true && isAdded == false)
+  {
+   isAdded = true;
+    humidityReading2 = valueRead.substring(1);
+    client.publish("humidity", humidityReading2);
+    print("Flag 3 is: ");
+     println(humidityReading2);
+    flag7 = false;
+    flag8 = true;
+  }
+  else if (flag8 == true && isAdded == false)
+  {
+    isAdded = true;
+    tempReading2 = valueRead.substring(1);
+    client.publish("temp", tempReading2);
+    print("Flag 4 is: ");
+    println(tempReading2);
+    flag8 = false;
+    flag5 = true;
+  }
+  
   }
   
 }  
@@ -313,7 +366,7 @@ void drawHumidityGraph(){
    {
     if(numOfHumidityVals<100)
     {
-      humidityData[numOfHumidityVals]=Float.parseFloat(humidityReading);
+      humidityData[numOfHumidityVals]=Float.parseFloat(humidityReading2);
       numOfHumidityVals++;
     }else
     {
@@ -323,7 +376,7 @@ void drawHumidityGraph(){
         temp[i]=humidityData[i+1];
       }
       humidityData=temp;
-      humidityData[numOfHumidityVals-1]=Float.parseFloat(humidityReading);
+      humidityData[numOfHumidityVals-1]=Float.parseFloat(humidityReading2);
     }
     
      humidityChart.setData(axisX, humidityData); 
@@ -353,7 +406,7 @@ void drawLightIntesityGraph(){
    {
     if(numOfLightVals<100)
     {
-      lightIntensityData[numOfLightVals]=Float.parseFloat(lightReading);
+      lightIntensityData[numOfLightVals]=Float.parseFloat(lightReading2);
       numOfLightVals++;
     }else
     {
@@ -363,7 +416,7 @@ void drawLightIntesityGraph(){
         temp[i]=lightIntensityData[i+1];
       }
       lightIntensityData=temp;
-      lightIntensityData[numOfLightVals-1]=Float.parseFloat(lightReading);
+      lightIntensityData[numOfLightVals-1]=Float.parseFloat(lightReading2);
     }
     
      lightIntensityChart.setData(axisX, lightIntensityData); 
@@ -393,7 +446,7 @@ void drawSoilSensorGraph(){
    {
     if(numOfSoilVals<100)
     {
-      soilData[numOfSoilVals]=Float.parseFloat(moistureReading);
+      soilData[numOfSoilVals]=Float.parseFloat(moistureReading2);
       numOfSoilVals++;
     }else
     {
@@ -403,7 +456,7 @@ void drawSoilSensorGraph(){
         temp[i]=soilData[i+1];
       }
       soilData=temp;
-      soilData[numOfSoilVals-1]=Float.parseFloat(moistureReading);
+      soilData[numOfSoilVals-1]=Float.parseFloat(moistureReading2);
     }
     
      soilChart.setData(axisX, soilData); 
@@ -433,7 +486,7 @@ void drawTempSensorGraph(){
    {
     if(numOfTempVals<100)
     {
-      tempData[numOfTempVals]=Float.parseFloat(tempReading);
+      tempData[numOfTempVals]=Float.parseFloat(tempReading2);
       numOfTempVals++;
     }else
     {
@@ -443,7 +496,7 @@ void drawTempSensorGraph(){
         temp[i]=tempData[i+1];
       }
       tempData=temp;
-      tempData[numOfTempVals-1]=Float.parseFloat(tempReading);
+      tempData[numOfTempVals-1]=Float.parseFloat(tempReading2);
     }
     
      tempChart.setData(axisX, tempData); 
