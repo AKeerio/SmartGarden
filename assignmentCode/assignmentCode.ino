@@ -48,13 +48,11 @@ void loop() {
   moistureValue = Serial.read();
   //Then print it out (also sends it on the Serial for processing)
  // Serial.print("Moisture value is: ");
-  Serial.print("b");
   Serial.println(moistureValue);
   //read the input from the light sensor and store it in a variable
   sensorValue = analogRead(A0);
   // Then print it to the Serial console
  // Serial.print("snesVal: ");
-  Serial.print("b");
   Serial.println(sensorValue);
   // If the soil isn't wet enough, turn the "Sprinkler" on
   checkMotor();
@@ -70,9 +68,7 @@ void loop() {
 
   // Print out the temperature and the humidity
   //Serial.print("Sample OK: "); // This can be deleted once we are reading into processing
-  Serial.print("b");
   Serial.println((int)temperature);// Serial.print(" *C, "); 
-  Serial.print("b");
   Serial.println((int)humidity);// Serial.println(" H");
   
   
