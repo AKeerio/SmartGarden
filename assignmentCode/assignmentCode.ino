@@ -14,6 +14,7 @@ const int ledPin = 13;
 SimpleDHT11 dht11;
 int angle;
 int moistureValue;
+int incomingByte;
 const int motorPin = 9;
 const int drySoil = 100;
     byte temperature;
@@ -75,20 +76,33 @@ void loop() {
     Serial.print("b");
   Serial.println((int)humidity);// Serial.println(" H");
   
+  if (Serial.available() > 0)
+  {
+   incomingByte= Serial.read();
+   
+   switch(incomingByte){
+   
+   case 'o':
+   turnMotorOn();
+   break;
+   
+   case 's':
+   turnMotorOff();
+   break;
+   
+   }
   
   // has to be 2 seconds or the dht won't work properly
   delay(2000);
 }
 
-void checkMotor()
+void turnMotorOn()
 {
-  if(moistureValue > drySoil)
-  {
- //   digitalWrite(motorPin, HIGH);
-  }
-  else
-  {
-//    digitalWrite(motorPin, LOW);
-  }
+
+   digitalWrite(motorPin, HIGH);
+
 }
 
+void turnMotorOff(){
+  digitalWrite(motorPin, LOW);
+}
