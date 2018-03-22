@@ -13,12 +13,12 @@ The project is aimed at using the internet of things in order to create a device
 * Seeduino - For connecting moisture sensor to arduino
 * Humidity sensor
 * Light Intensity sensor
-* LED/Motor/Servo - To use as an indicator to simulate a sprinkler
-* 
+* LED/Motor/Servo - To use as an indicator to simulate a sprinkle
+
 Below is an exmaple diagram for device B
  
-![alt text](https://bitbucket.org/smartgardenersshu/progthingsirrigation/src/fb3dacdd050d919a28b8142bb1267ded37c32412/Assignment_bb.png?at=jordyrichards%2Fadded-motor-support-1521660818114 "Schema")
-#### Software
+![alt text](Assignment_bb.png "Arduino")
+
 * Arduino IDE
 	* Seeduino Libraries
     * SimpleDHT
@@ -46,4 +46,45 @@ The code for arduino was very simple and straight forward. However, we have to m
 ```
 The code above is an example of how each sensor data is collected. The first character is the sensor id and second charachter is the device id and anything numrical after that are the reading of that sensor.
 
-These reading are send to the serial 
+These reading are send to the serial and read by XBees
+
+Processing IDE then recieves these reading as bytes from XBees
+Data read from serial event is then stored
+```
+void serialEvent(Serial p)
+{
+  String valueRead = p.readStringUntil('\n');
+  if (valueRead!=null)
+  {
+    if (valueRead.charAt(1)=='a')
+    {
+      switch(valueRead.charAt(0))
+      {
+      case 'h':
+        ....
+```     
+It is stored twice, one for graphs and other reading log.
+```
+if (soilList2.size()>40)
+    soilList2.remove(40);
+  soilList2.add(0, moistureReading2);
+
+  arrayCopy(humidityData, 1, humidityData, 0, humidityData.length-1);
+  humidityData[99]=Float.parseFloat(humidityReading1);
+```
+
+We establish a MQTT connection. We can subscribe to topic to recieve data and send to serial / XBee
+
+```
+ client = new MQTTClient(this);
+  client.connect("mqtt://10.192.67.232:9003", "Sensor1");
+  client.subscribe("sprinkler");
+  client.subscribe("calibrate");
+```
+Then we publish reading using a topic. This data is send to a broker.
+```
+client.publish("humidity", humidityReading1);
+```
+Then using javascript to establish connection with the broker we can read the data which was published by the processing IDE.
+
+## Website
