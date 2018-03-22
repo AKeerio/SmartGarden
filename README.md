@@ -88,3 +88,24 @@ client.publish("humidity", humidityReading1);
 Then using javascript to establish connection with the broker we can read the data which was published by the processing IDE.
 
 ## Website
+Since Processing IDE publishes to topic the javascirpt it get these readings by subscribing to them
+```
+ 	function onConnect() {
+	  // Once a connection has been made, make a subscription and send a message.
+		console.log("Connected ");
+		mqtt.subscribe("light");
+		console.log("subbed ");
+		mqtt.subscribe("moisture");
+		mqtt.subscribe("humidity");
+		mqtt.subscribe("temp");
+		mqtt.subscribe("app");
+		mqtt.subscribe("status");
+		/**
+		 * [message a published message to tell Admin Dashboard that there is a connection]
+		 * @type {Paho}
+		 */
+		message = new Paho.MQTT.Message("Connected");
+		message.destinationName = "app";
+		mqtt.send(message);
+		console.log("sent ");
+```
