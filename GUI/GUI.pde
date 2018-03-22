@@ -1,4 +1,4 @@
-import processing.serial.*;
+import processing.serial.*; //<>//
 import org.gicentre.utils.stat.*;
 import mqtt.*;
 
@@ -14,14 +14,6 @@ boolean device2BtnPressed;
 boolean motorON;
 boolean paused;
 
-boolean flag1;
-boolean flag2;
-boolean flag3;
-boolean flag4;
-boolean flag5;
-boolean flag6;
-boolean flag7;
-boolean flag8;
 
 int numOfHumidityVals;
 int numOfLightVals;
@@ -97,14 +89,6 @@ void setup()
   paused   = false;
   motorON  = false;
 
-  flag2 = true;
-  flag3 = false;
-  flag4 = false;
-  flag5 = true;
-  flag6 = false;
-  flag7 = false;
-  flag8 = false;
-
   lightIntensityChart = new XYChart(this);
   humidityChart       = new XYChart(this);
   soilChart = new XYChart(this);
@@ -130,10 +114,9 @@ void setup()
     axisX[i]=i*1;
   }
 
-
-  //printArray(Serial.list());
-  String portName = Serial.list()[2]; // Needs to be whatever the Xbee port is
-  port = new Serial(this, portName, 9600);
+  printArray(Serial.list());
+  String portName = Serial.list()[0]; // Needs to be whatever the Xbee port is
+  port = new Serial(this, "COM14", 9600);
 }  
 
 void messageReceived(String topic, byte[] payload)
@@ -217,158 +200,146 @@ void draw()
   }
 }
 
-void serialEvent(Serial p) { 
-  boolean isAdded = false;
+void serialEvent(Serial p)
+{
   String valueRead = p.readStringUntil('\n');
-  if (valueRead == null)
+  //println(valueRead);
+  if(valueRead!=null)
   {
-    isAdded = true;
-  } else if (valueRead.charAt(0) == 'a')
-  {
-    if (flag2 == true && isAdded == false)
+    if(valueRead.charAt(1)=='a')
     {
-      isAdded = true;
-     // lightReading1 = valueRead;
-      client.publish("light", valueRead);
-      lightReading1 = valueRead.substring(1);      
-      lightIntensityList.add(0, lightReading1);
-      //print("Flag 2 is: ");
-      //println(valueRead);
-      if (numOfLightVals<100)
+      switch(valueRead.charAt(0))
       {
-        lightIntensityData[numOfLightVals]=Float.parseFloat(lightReading1);
-        numOfLightVals++;
-      } else
-      {
-        arrayCopy(lightIntensityData, 1, lightIntensityData, 0, lightIntensityData.length-1);
-        lightIntensityData[numOfLightVals-1]=Float.parseFloat(lightReading1);
+        case 'h':
+        {
+          humidityReading1=valueRead.substring(1);
+          client.publish("humidity", humidityReading1);
+          humidityReading1= valueRead.substring(2); 
+          humidityList.add(0, humidityReading1);
+          if (numOfHumidityVals<100)
+          {
+            humidityData[numOfHumidityVals]=Float.parseFloat(humidityReading1);
+            numOfHumidityVals++;
+          } else
+          {
+            arrayCopy(humidityData, 1, humidityData, 0, humidityData.length-1);
+            humidityData[numOfHumidityVals-1]=Float.parseFloat(humidityReading1);
+          }
+        }
+        break;
+        case 'l':
+        {
+          lightReading1=valueRead.substring(1);
+          client.publish("light", lightReading1);
+          lightReading1 = valueRead.substring(2);       
+          lightIntensityList.add(0, lightReading1);
+          if (numOfLightVals<100)
+          {
+            lightIntensityData[numOfLightVals]=Float.parseFloat(lightReading1);
+            numOfLightVals++;
+          } else
+          {
+            arrayCopy(lightIntensityData, 1, lightIntensityData, 0, lightIntensityData.length-1);
+            lightIntensityData[numOfLightVals-1]=Float.parseFloat(lightReading1);
+          }
+        }
+        break;
+        case 't':
+        {
+          tempReading1 = valueRead.substring(1);
+          client.publish("temp", tempReading1);
+          tempReading1=valueRead.substring(2); 
+          tempList.add(0, tempReading1);
+          if (numOfTempVals<100)
+          {
+            tempData[numOfTempVals]=Float.parseFloat(tempReading1);
+            numOfTempVals++;
+          } else
+          {
+            arrayCopy(tempData, 1, tempData, 0, tempData.length-1);
+            tempData[numOfTempVals-1]=Float.parseFloat(tempReading1);
+          }
+        }
+        break;
       }
-      flag2 = false;
-      flag3 = true;
-    } else if (flag3 == true && isAdded == false)
-    {
-      isAdded = true;
-     // humidityReading1 = valueRead;
-      client.publish("humidity", valueRead);
-      humidityReading1 = valueRead.substring(1);
-      humidityList.add(0, humidityReading1);
-      //print("Flag 3 is: ");
-      //println(humidityReading1);
-      if (numOfHumidityVals<100)
-      {
-        humidityData2[numOfHumidityVals]=Float.parseFloat(humidityReading1);
-        numOfHumidityVals++;
-      } else
-      {
-        arrayCopy(humidityData, 1, humidityData, 0, humidityData.length-1);
-        humidityData[numOfHumidityVals-1]=Float.parseFloat(humidityReading1);
-      }
-      flag3 = false;
-      flag4 = true;
-    } else if (flag4 == true && isAdded == false)
-    {
-      isAdded = true;
-  //    tempReading1 = valueRead;
-      client.publish("temp", valueRead);
-      tempReading1 = valueRead.substring(1);      
-      tempList.add(0, tempReading1);
-      //print("Flag 4 is: ");
-      //println(tempReading1);
-      if (numOfTempVals<100)
-      {
-        tempData[numOfTempVals]=Float.parseFloat(tempReading1);
-        numOfTempVals++;
-      } else
-      {
-        arrayCopy(tempData, 1, tempData, 0, tempData.length-1);
-        tempData[numOfTempVals-1]=Float.parseFloat(tempReading1);
-      }
-      flag4 = false;
-      flag2 = true;
     }
-  } else if (valueRead.charAt(0) == 'b')
-  {
-    if (flag5 == true && isAdded == false)
+    else if(valueRead.charAt(1)=='b')
     {
-      isAdded = true;
-      moistureReading2 = valueRead.substring(1); 
-      soilList2.add(0, moistureReading2);
-      client.publish("moisture", valueRead);
-      //print("Flag 5 is: ");
-      //println(moistureReading2);
-      if (numOfSoilVals2<100)
+      switch(valueRead.charAt(0))
       {
-        soilData2[numOfSoilVals2]=Float.parseFloat(moistureReading2);
-        numOfSoilVals2++;
-      } else
-      {
-        arrayCopy(soilData2, 1, soilData2, 0, humidityData2.length-1);
-        soilData2[numOfSoilVals2-1]=Float.parseFloat(moistureReading2);
+        case 'h':
+        {
+          humidityReading2=valueRead.substring(1);
+          client.publish("humidity", humidityReading2);
+          humidityReading2=valueRead.substring(2); 
+          humidityList2.add(0, humidityReading1);
+          if (numOfHumidityVals<100)
+          {
+            humidityData2[numOfHumidityVals]=Float.parseFloat(humidityReading2);
+            numOfHumidityVals2++;
+          } else
+          {
+            arrayCopy(humidityData2, 1, humidityData2, 0, humidityData2.length-1);
+            humidityData2[numOfHumidityVals2-1]=Float.parseFloat(humidityReading2);
+          }
+        }
+        break;
+        case 'l':
+        {
+          lightReading2=valueRead.substring(1);
+          client.publish("light", lightReading2);
+          lightReading2 = valueRead.substring(2);  
+          lightIntensityList2.add(0, lightReading2);
+          if (numOfLightVals2<100)
+          {
+            lightIntensityData2[numOfLightVals2]=Float.parseFloat(lightReading2);
+            numOfLightVals2++;
+          } else
+          {
+            arrayCopy(lightIntensityData2, 1, lightIntensityData2, 0, lightIntensityData2.length-1);
+            lightIntensityData2[numOfLightVals2-1]=Float.parseFloat(lightReading2);
+          }
+        }
+        break;
+        case 't':
+        {
+          tempReading2 = valueRead.substring(1);
+          client.publish("temp", tempReading2);
+          tempReading2=valueRead.substring(2); 
+          tempList2.add(0, tempReading2);
+          if (numOfTempVals<100)
+          {
+            tempData2[numOfTempVals2]=Float.parseFloat(tempReading2);
+            numOfTempVals2++;
+          } else
+          {
+            arrayCopy(tempData2, 1, tempData2, 0, tempData2.length-1);
+            tempData2[numOfTempVals2-1]=Float.parseFloat(tempReading2);
+          }
+        }
+        break;
+        case 'm':{
+          moistureReading2 = valueRead.substring(1);
+          
+          client.publish("moisture", moistureReading2);
+          
+          moistureReading2 = valueRead.substring(2); 
+          soilList2.add(0, moistureReading2);
+          if (numOfSoilVals2<100)
+          {
+            soilData2[numOfSoilVals2]=Float.parseFloat(moistureReading2);
+            numOfSoilVals2++;
+          } else
+          {
+            arrayCopy(soilData2, 1, soilData2, 0, soilData2.length-1);
+            soilData2[numOfSoilVals2-1]=Float.parseFloat(moistureReading2);
+          }
+        }
+        break;
       }
-      flag5 = false;
-      flag6 = true;
-    } else if (flag6 == true && isAdded == false)
-    {
-      isAdded = true;
-      lightReading2 = valueRead.substring(1);
-      lightIntensityList2.add(0, lightReading2);
-      client.publish("light", valueRead);
-      //print("Flag 6 is: ");
-      //println(lightReading2);
-      if (numOfLightVals2<100)
-      {
-        lightIntensityData2[numOfLightVals2]=Float.parseFloat(lightReading2);
-        numOfLightVals2++;
-      } else
-      {
-        arrayCopy(lightIntensityData2, 1, lightIntensityData2, 0, lightIntensityData2.length-1);
-        lightIntensityData2[numOfLightVals2-1]=Float.parseFloat(lightReading2);
-      }
-      flag6 = false;
-      flag7 = true;
-    } else if (flag7 == true && isAdded == false)
-    {
-      isAdded = true;
-      humidityReading2 = valueRead.substring(1);
-      humidityList2.add(0, humidityReading2);
-      client.publish("humidity", valueRead);
-      //print("Flag 7 is: ");
-      //println(humidityReading2);
-      if (numOfSoilVals2<100)
-      {
-        soilData2[numOfSoilVals2]=Float.parseFloat(moistureReading2);
-        numOfSoilVals2++;
-      } else
-      {
-        arrayCopy(soilData2, 1, soilData2, 0, soilData2.length-1);
-        soilData2[numOfSoilVals2-1]=Float.parseFloat(moistureReading2);
-      }
-      flag7 = false;
-      flag8 = true;
-    } else if (flag8 == true && isAdded == false)
-    {
-      isAdded = true;
-      tempReading2 = valueRead.substring(1);
-      tempList2.add(0, tempReading2);
-      client.publish("temp", valueRead);
-     // print("Flag 8 is: ");
-      //println(tempReading2);
-      if (numOfTempVals2<100)
-      {
-        tempData2[numOfTempVals2]=Float.parseFloat(tempReading2);
-        numOfTempVals2++;
-      } else
-      {
-        arrayCopy(tempData2, 1, tempData2, 0, soilData2.length-1);
-        tempData2[numOfTempVals2-1]=Float.parseFloat(tempReading2);
-      }
-      // addToArray(tempData2,tempReading2,numOfTempVals2);
-
-      flag8 = false;
-      flag5 = true;
     }
   }
-} 
+}
 
 void addToArray(float[] data, String reading, int index)
 {
@@ -680,13 +651,6 @@ void drawSensorHistory()
     text(humidityList.get(i), 390, 100+(i*15));
   }
 
-  if (soilList2.size()>40)
-    soilList2.remove(40); 
-
-  for (int i=0; i<soilList2.size(); i++)
-  {
-    text(soilList2.get(i), 530, 100+(i*15));
-  }
 }
 
 void drawSensorHistory2()
@@ -718,6 +682,7 @@ void drawSensorHistory2()
     tempList2.remove(40);
   for (int i=0; i<tempList2.size(); i++)
   {
+    if(tempList2.get(i)!=null)
     text(tempList2.get(i), 50, 100+(i*15));
   }    
 
@@ -725,6 +690,7 @@ void drawSensorHistory2()
     lightIntensityList2.remove(40);
   for (int i=0; i<lightIntensityList2.size(); i++)
   {
+    if(lightIntensityList2!=null)
     text(lightIntensityList2.get(i), 200, 100+(i*15));
   }
 
@@ -732,6 +698,7 @@ void drawSensorHistory2()
     humidityList2.remove(40);
   for (int i=0; i<humidityList2.size(); i++)
   {
+    if(humidityList2.get(i)!=null)
     text(humidityList2.get(i), 390, 100+(i*15));
   }
 
@@ -740,6 +707,7 @@ void drawSensorHistory2()
 
   for (int i=0; i<soilList2.size(); i++)
   {
+    if(soilList2.get(i)!=null)
     text(soilList2.get(i), 530, 100+(i*15));
   }
 }
@@ -771,7 +739,8 @@ void drawMotorBtn()
       text("ON", rectX+30, rectY+30);
 
       //////////send to serial port here
-      port.write('o');   
+      port.write('W');    
+      port.write("\n");
     }
   }
 
@@ -789,7 +758,6 @@ void drawMotorBtn()
   text("OFF", rectX2+30, rectY+30);
   if (mouseX>=rectX2 && mouseX<=rectX2+rectW2 && mouseY>=rectY2 && mouseY<=rectY2+rectH2)
   {
-
     if (mousePressed)
     {
       motorON=false;
@@ -798,7 +766,8 @@ void drawMotorBtn()
       fill(255);
       textSize(20);
       text("OFF", rectX2+30, rectY+30);
-      port.write('s');      
+      port.write('S');
+      port.write("\n");      
     }
   }
 
@@ -807,10 +776,16 @@ void drawMotorBtn()
     fill(0);
     textSize(20);
     text("Motor is On", 100, 100);
-  } else
+port.write('W');
+      port.write("\n");  
+      delay(10);
+  } else if (!motorON)
   {
     fill(0);
     textSize(20);
     text("Motor is Off", 100, 100);
+    port.write('S');
+      port.write("\n");  
+      delay(10);
   }
 }

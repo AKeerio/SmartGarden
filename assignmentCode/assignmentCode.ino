@@ -16,8 +16,8 @@ int angle;
 int moistureValue;
 const int motorPin = 9;
 const int drySoil = 100;
-    byte temperature;
-  byte humidity;
+byte temperature;
+byte humidity;
 
 void setup() {
   // Make the LED pin an output and turn it on
@@ -48,16 +48,17 @@ void loop() {
   moistureValue = Serial.read();
   //Then print it out (also sends it on the Serial for processing)
  // Serial.print("Moisture value is: ");
-   Serial.print("b");
+  
+  Serial.print("m");
+  Serial.print("b");
   Serial.println(moistureValue);
   //read the input from the light sensor and store it in a variable
   sensorValue = analogRead(A0);
   // Then print it to the Serial console
  // Serial.print("snesVal: ");
+   Serial.print("l");
    Serial.print("b");
   Serial.println(sensorValue);
-  // If the soil isn't wet enough, turn the "Sprinkler" on
-  checkMotor();
   
   // Declare the start values for the humidty sensor
 
@@ -70,8 +71,10 @@ void loop() {
 
   // Print out the temperature and the humidity
   //Serial.print("Sample OK: "); // This can be deleted once we are reading into processing
+    Serial.print("t");
     Serial.print("b");
   Serial.println((int)temperature);// Serial.print(" *C, "); 
+    Serial.print("h");
     Serial.print("b");
   Serial.println((int)humidity);// Serial.println(" H");
   
@@ -80,15 +83,4 @@ void loop() {
   delay(2000);
 }
 
-void checkMotor()
-{
-  if(moistureValue > drySoil)
-  {
- //   digitalWrite(motorPin, HIGH);
-  }
-  else
-  {
-//    digitalWrite(motorPin, LOW);
-  }
-}
 
