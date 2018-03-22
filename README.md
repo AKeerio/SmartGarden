@@ -34,6 +34,10 @@ Below is an exmaple diagram for device B
 * HTML5
 * LibWebSockets
 
+### Sources
+* https://github.com/mitsuruog/what-mqtt
+* http://www.steves-internet-guide.com/mqtt-websockets/
+
 ## Arduino Code
 The code for arduino was very simple and straight forward. However, we have to make sure our circuit are wired correctly and everything is in working condition.
 ```
