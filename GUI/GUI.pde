@@ -1,10 +1,20 @@
+//Libraries required for project
 import processing.serial.*; //<>//
 import org.gicentre.utils.stat.*;
 import mqtt.*;
 
+/**
+ * [Serial the port by which to communicate with XBees]
+ */
 Serial port;
+/**
+ * [MQTTClient is the client to connect to broker]
+ */
 MQTTClient client;
 
+/**
+ * Buttons for Dashboard
+ */
 boolean atMainMenu;
 boolean graphsBtnPressed;
 boolean historyBtnPressed;
@@ -14,7 +24,9 @@ boolean device2BtnPressed;
 boolean motorON;
 boolean paused;
 
-
+/**
+ *  Keeps count of number of values to prevent stack overflow
+ */
 int numOfHumidityVals;
 int numOfLightVals;
 int numOfTempVals;
@@ -24,8 +36,14 @@ int numOfLightVals2;
 int numOfTempVals2;
 int numOfSoilVals2;
 
+/**
+ *  Pauses data input/output to avoid serial issues
+ */
 double delayPause;
 
+/**
+ * Variables for graphs
+ */
 float[] axisX;
 float[] humidityData        = new float[100];
 float[] lightIntensityData  = new float[100];
@@ -36,6 +54,9 @@ float[] lightIntensityData2 = new float[100];
 float[] tempData2           = new float[100];
 float[] soilData2           = new float[100];
 
+/**
+ * Arrays to hold sensor data
+ */
 ArrayList<String> humidityList;
 ArrayList<String> lightIntensityList;
 ArrayList<String> tempList;
@@ -44,6 +65,9 @@ ArrayList<String> lightIntensityList2;
 ArrayList<String> soilList2;
 ArrayList<String> tempList2;
 
+/**
+ * Holds the input from the sensor
+ */
 String lightReading1;
 String humidityReading1;
 String tempReading1;
@@ -53,12 +77,17 @@ String lightReading2;
 String humidityReading2;
 String tempReading2;
 
-
+/**
+ * Wrappers for Charts
+ */
 XYChart lightIntensityChart;
 XYChart humidityChart;
 XYChart soilChart;
 XYChart tempChart;
 
+/**
+ * [setup Setup for Dashboard]
+ */
 void setup()
 {
   surface.setTitle("Graphs");
@@ -69,7 +98,7 @@ void setup()
   client = new MQTTClient(this);
   client.connect("mqtt://10.65.192.114:9003", "Sensor1");
   client.subscribe("sprinkler");
-
+  client.subscribe("app");
   lightIntensityList = new ArrayList<String>();
   humidityList = new ArrayList<String>();
   tempList = new ArrayList<String>();
@@ -80,6 +109,7 @@ void setup()
 
   delayPause    = millis();
 
+  //Button creation
   atMainMenu        = true;
   graphsBtnPressed  = false;
   historyBtnPressed = false;
@@ -89,6 +119,7 @@ void setup()
   paused   = false;
   motorON  = false;
 
+  //Graph set up
   lightIntensityChart = new XYChart(this);
   humidityChart       = new XYChart(this);
   soilChart = new XYChart(this);
@@ -99,32 +130,52 @@ void setup()
   soilChart.setMaxY(250);
   tempChart.setMaxY(30);
 
+  //Init values
   numOfHumidityVals = 0;
   numOfLightVals = 0;
   numOfTempVals  = 0;
   numOfHumidityVals2 = 0;
   numOfLightVals2 = 0;
   numOfTempVals2  = 0;
-  numOfSoilVals2  = 0; 
+  numOfSoilVals2  = 0;
 
   axisX=new float[100];
-
+  //Create graph axis
   for (int i=0; i<axisX.length; i++)
   {
     axisX[i]=i*1;
   }
-
+/**
+ * [printArray prints the list of serial for testing use]
+ * @param Serial.list( [description]
+ */
   printArray(Serial.list());
   String portName = Serial.list()[0]; // Needs to be whatever the Xbee port is
-  port = new Serial(this, "COM14", 9600);
-}  
+  port = new Serial(this, "COM6", 9600);
+}
 
+/**
+ * [messageReceived handles message recieved from subscribed MQTT topics]
+ * @param topic   [topic subscribed to]
+ * @param payload [message from publisher to topic]
+ */
 void messageReceived(String topic, byte[] payload)
 {
   //println("New message: "+topic+" - "+new String(payload));
   println(new String (payload));
+  println(topic);
+
+  if(topic.equals("sprinkler") == true)
+   {
+      port.write('W');
+      port.write("\n");
+      motorON = true;
+   }
 }
 
+/**
+ * [draw Draws out the Dashboard buttons]
+ */
 void draw()
 {
   background(255, 255, 255);
@@ -158,14 +209,14 @@ void draw()
 
   if (device1BtnPressed && historyBtnPressed)
   {
-    background(255);    
+    background(255);
     drawBackBtn();
     drawSensorHistory();
   } else
 
     if (device2BtnPressed )
     {
-      background(255);    
+      background(255);
       drawBackBtn();
       drawSensorHistory2();
     }
@@ -200,6 +251,10 @@ void draw()
   }
 }
 
+/**
+ * [serialEvent Acts on event of serial data being recieved]
+ * @param p [serial variable]
+ */
 void serialEvent(Serial p)
 {
   String valueRead = p.readStringUntil('\n');
@@ -214,8 +269,13 @@ void serialEvent(Serial p)
         {
           humidityReading1=valueRead.substring(1);
           client.publish("humidity", humidityReading1);
-          humidityReading1= valueRead.substring(2); 
+          humidityReading1= valueRead.substring(2);
           humidityList.add(0, humidityReading1);
+          if(humidityList.size()>40)
+          {
+            humidityList.remove(40);
+            humidityList.add(0,humidityReading1);
+          }
           if (numOfHumidityVals<100)
           {
             humidityData[numOfHumidityVals]=Float.parseFloat(humidityReading1);
@@ -231,7 +291,7 @@ void serialEvent(Serial p)
         {
           lightReading1=valueRead.substring(1);
           client.publish("light", lightReading1);
-          lightReading1 = valueRead.substring(2);       
+          lightReading1 = valueRead.substring(2);
           lightIntensityList.add(0, lightReading1);
           if (numOfLightVals<100)
           {
@@ -248,7 +308,7 @@ void serialEvent(Serial p)
         {
           tempReading1 = valueRead.substring(1);
           client.publish("temp", tempReading1);
-          tempReading1=valueRead.substring(2); 
+          tempReading1=valueRead.substring(2);
           tempList.add(0, tempReading1);
           if (numOfTempVals<100)
           {
@@ -271,7 +331,7 @@ void serialEvent(Serial p)
         {
           humidityReading2=valueRead.substring(1);
           client.publish("humidity", humidityReading2);
-          humidityReading2=valueRead.substring(2); 
+          humidityReading2=valueRead.substring(2);
           humidityList2.add(0, humidityReading1);
           if (numOfHumidityVals<100)
           {
@@ -288,7 +348,7 @@ void serialEvent(Serial p)
         {
           lightReading2=valueRead.substring(1);
           client.publish("light", lightReading2);
-          lightReading2 = valueRead.substring(2);  
+          lightReading2 = valueRead.substring(2);
           lightIntensityList2.add(0, lightReading2);
           if (numOfLightVals2<100)
           {
@@ -305,7 +365,7 @@ void serialEvent(Serial p)
         {
           tempReading2 = valueRead.substring(1);
           client.publish("temp", tempReading2);
-          tempReading2=valueRead.substring(2); 
+          tempReading2=valueRead.substring(2);
           tempList2.add(0, tempReading2);
           if (numOfTempVals<100)
           {
@@ -320,10 +380,10 @@ void serialEvent(Serial p)
         break;
         case 'm':{
           moistureReading2 = valueRead.substring(1);
-          
+
           client.publish("moisture", moistureReading2);
-          
-          moistureReading2 = valueRead.substring(2); 
+
+          moistureReading2 = valueRead.substring(2);
           soilList2.add(0, moistureReading2);
           if (numOfSoilVals2<100)
           {
@@ -341,6 +401,12 @@ void serialEvent(Serial p)
   }
 }
 
+/**
+ * [addToArray Places sensor data in array]
+ * @param data    [incoming data array]
+ * @param reading [current data reading]
+ * @param index   [point of current data reading]
+ */
 void addToArray(float[] data, String reading, int index)
 {
   if (index<100)
@@ -354,6 +420,17 @@ void addToArray(float[] data, String reading, int index)
   }
 }
 
+/**
+ * [button draws and describes button interactions]
+ * @param rectX      [x position of button]
+ * @param rectY      [y position of button]
+ * @param rectW      [width of button]
+ * @param rectH      [height of button]
+ * @param txtOffsetX [offset of text in the x]
+ * @param txtOffsetY [offset of text in the y]
+ * @param name       [name of the button]
+ * @param id         [id of the button]
+ */
 void button(int rectX, int rectY, int rectW, int rectH, int txtOffsetX, int txtOffsetY, String name, String id)
 {
   if (mouseX>=rectX && mouseX<=rectX+rectW && mouseY>=rectY && mouseY<=rectY+rectH)
@@ -364,10 +441,10 @@ void button(int rectX, int rectY, int rectW, int rectH, int txtOffsetX, int txtO
     textSize(20);
     text(name, rectX+txtOffsetX, rectY+txtOffsetY);
     if (mousePressed&&atMainMenu)
-    {       
+    {
       if (id=="graph")
       {
-        graphsBtnPressed=true; 
+        graphsBtnPressed=true;
         historyBtnPressed=false;
         cPanelBtnPressed=false;
         device1BtnPressed=false;
@@ -376,7 +453,7 @@ void button(int rectX, int rectY, int rectW, int rectH, int txtOffsetX, int txtO
 
       if (id=="history")
       {
-        graphsBtnPressed=false; 
+        graphsBtnPressed=false;
         historyBtnPressed=true;
         cPanelBtnPressed=false;
         device1BtnPressed=false;
@@ -385,9 +462,9 @@ void button(int rectX, int rectY, int rectW, int rectH, int txtOffsetX, int txtO
 
       if (id=="cpanel")
       {
-        graphsBtnPressed=false; 
+        graphsBtnPressed=false;
         historyBtnPressed=false;
-        cPanelBtnPressed=true; 
+        cPanelBtnPressed=true;
         device1BtnPressed=false;
         device2BtnPressed=false;
       }
@@ -396,42 +473,42 @@ void button(int rectX, int rectY, int rectW, int rectH, int txtOffsetX, int txtO
     } else if (mousePressed && graphsBtnPressed)
     {
       if (id=="deviceA") {
-        graphsBtnPressed=true; 
+        graphsBtnPressed=true;
         historyBtnPressed=false;
-        cPanelBtnPressed=false; 
+        cPanelBtnPressed=false;
         device1BtnPressed=true;
         device2BtnPressed=false;
       }
 
       if (id=="deviceB")
       {
-        graphsBtnPressed=true; 
+        graphsBtnPressed=true;
         historyBtnPressed=false;
-        cPanelBtnPressed=false; 
+        cPanelBtnPressed=false;
         device1BtnPressed=false;
         device2BtnPressed=true;
       }
     } else if (mousePressed && historyBtnPressed)
     {
       if (id=="deviceA") {
-        graphsBtnPressed=false; 
+        graphsBtnPressed=false;
         historyBtnPressed=true;
-        cPanelBtnPressed=false; 
+        cPanelBtnPressed=false;
         device1BtnPressed=true;
         device2BtnPressed=false;
       }
 
       if (id=="deviceB")
       {
-        graphsBtnPressed=false; 
+        graphsBtnPressed=false;
         historyBtnPressed=true;
-        cPanelBtnPressed=false; 
+        cPanelBtnPressed=false;
         device1BtnPressed=false;
         device2BtnPressed=true;
       }
     }
   } else
-  { 
+  {
     fill(0, 102, 153);
     rect(rectX, rectY, 200, 200, 10, 10, 10, 10);
     fill(255);
@@ -440,6 +517,9 @@ void button(int rectX, int rectY, int rectW, int rectH, int txtOffsetX, int txtO
   }
 }
 
+/**
+ * [drawBackBtn draws the 'back' button]
+ */
 void drawBackBtn() {
   int rectX=905;
   int rectY=10;
@@ -472,6 +552,9 @@ void drawBackBtn() {
   }
 }
 
+/**
+ * [drawPauseBtn draws the pause button]
+ */
 void drawPauseBtn() {
   int rectX=800;
   int rectY=10;
@@ -503,6 +586,9 @@ void drawPauseBtn() {
   }
 }
 
+/**
+ * [drawDeviceBtns draws button to select devices]
+ */
 void drawDeviceBtns()
 {
   device1BtnPressed=false;
@@ -512,6 +598,10 @@ void drawDeviceBtns()
   button(600, height/2-100, 200, 200, 60, 100, "Device 2", "deviceB");
 }
 
+/**
+ * [drawHumidityGraph draws humidity graph]
+ * @param humidityData [array of humidity sensor data]
+ */
 void drawHumidityGraph(float[] humidityData) {
   int rectX =20;
   int rectY = 50;
@@ -524,7 +614,7 @@ void drawHumidityGraph(float[] humidityData) {
     humidityChart.setData(axisX, humidityData);
   }
 
-  humidityChart.showYAxis(true); 
+  humidityChart.showYAxis(true);
   humidityChart.setMinY(0);
 
   // Symbol colours
@@ -534,7 +624,10 @@ void drawHumidityGraph(float[] humidityData) {
   humidityChart.draw(rectX, rectY, width/2-30, height/2-70);
 }
 
-
+/**
+ * [drawLightIntesityGraph draws light intensity graph]
+ * @param lightIntensityData [array data from light sensor]
+ */
 void drawLightIntesityGraph(float[] lightIntensityData) {
   int rectX =width/2+15;
   int rectY = 50;
@@ -547,7 +640,7 @@ void drawLightIntesityGraph(float[] lightIntensityData) {
     lightIntensityChart.setData(axisX, lightIntensityData);
   }
 
-  lightIntensityChart.showYAxis(true); 
+  lightIntensityChart.showYAxis(true);
   lightIntensityChart.setMinY(0);
 
   // Symbol colours
@@ -557,7 +650,11 @@ void drawLightIntesityGraph(float[] lightIntensityData) {
   lightIntensityChart.draw(rectX, rectY, width/2-30, height/2-70);
 }
 
-void drawSoilSensorGraph(float[] soilData) {  
+/**
+ * [drawSoilSensorGraph draws graph on moisture sensor]
+ * @param soilData [array data from moisture sensor]
+ */
+void drawSoilSensorGraph(float[] soilData) {
   int rectX =20;
   int rectY = height/2+20;
 
@@ -571,7 +668,7 @@ void drawSoilSensorGraph(float[] soilData) {
     soilChart.setData(axisX, soilData);
   }
 
-  soilChart.showYAxis(true); 
+  soilChart.showYAxis(true);
   soilChart.setMinY(0);
 
   // Symbol colours
@@ -580,8 +677,11 @@ void drawSoilSensorGraph(float[] soilData) {
   soilChart.setLineWidth(2);
   soilChart.draw(rectX, rectY, width/2-30, height/2-70);
 }
-
-void drawTempSensorGraph(float[] tempData) {  
+/**
+ * [drawTempSensorGraph draws graph based on temperture sensor data]
+ * @param tempData [array of temperature sensor data]
+ */
+void drawTempSensorGraph(float[] tempData) {
   int rectX =width/2+20;
   int rectY = height/2+20;
 
@@ -595,7 +695,7 @@ void drawTempSensorGraph(float[] tempData) {
     tempChart.setData(axisX, tempData);
   }
 
-  tempChart.showYAxis(true); 
+  tempChart.showYAxis(true);
   tempChart.setMinY(0);
 
   // Symbol colours
@@ -605,6 +705,9 @@ void drawTempSensorGraph(float[] tempData) {
   tempChart.draw(rectX, rectY, width/2-30, height/2-70);
 }
 
+/**
+ * [drawSensorHistory draws history of sensor data]
+ */
 void drawSensorHistory()
 {
   rect(15, 50, width/2+100, height-60, 10);
@@ -613,13 +716,13 @@ void drawSensorHistory()
   line(width/2+130, 85, 1011, 85);
   fill(0);
   textSize(15);
-  text("Temperature", 50, 75); 
-  text("Light Intensity", 200, 75); 
-  text("Humidity", 390, 75); 
-  text("Moisture", 530, 75); 
-  text("Device", 680, 75);       
-  text("Duration", 800, 75); 
-  text("Time", 930, 75); 
+  text("Temperature", 50, 75);
+  text("Light Intensity", 200, 75);
+  text("Humidity", 390, 75);
+  text("Moisture", 530, 75);
+  text("Device", 680, 75);
+  text("Duration", 800, 75);
+  text("Time", 930, 75);
 
   //For testing history window
   /*if(!paused)
@@ -635,7 +738,7 @@ void drawSensorHistory()
   for (int i=0; i<tempList.size(); i++)
   {
     text(tempList.get(i), 50, 100+(i*15));
-  }    
+  }
 
   if (lightIntensityList.size()>40)
     lightIntensityList.remove(40);
@@ -653,6 +756,9 @@ void drawSensorHistory()
 
 }
 
+/**
+ * [drawSensorHistory2 draws data history from second arduino]
+ */
 void drawSensorHistory2()
 {
   rect(15, 50, width/2+100, height-60, 10);
@@ -661,13 +767,13 @@ void drawSensorHistory2()
   line(width/2+130, 85, 1011, 85);
   fill(0);
   textSize(15);
-  text("Temperature", 50, 75); 
-  text("Light Intensity", 200, 75); 
-  text("Humidity", 390, 75); 
-  text("Moisture", 530, 75); 
-  text("Device", 680, 75);       
-  text("Duration", 800, 75); 
-  text("Time", 930, 75); 
+  text("Temperature", 50, 75);
+  text("Light Intensity", 200, 75);
+  text("Humidity", 390, 75);
+  text("Moisture", 530, 75);
+  text("Device", 680, 75);
+  text("Duration", 800, 75);
+  text("Time", 930, 75);
 
   //For testing history window
   /*if(!paused)
@@ -684,7 +790,7 @@ void drawSensorHistory2()
   {
     if(tempList2.get(i)!=null)
     text(tempList2.get(i), 50, 100+(i*15));
-  }    
+  }
 
   if (lightIntensityList2.size()>40)
     lightIntensityList2.remove(40);
@@ -703,7 +809,7 @@ void drawSensorHistory2()
   }
 
   if (soilList2.size()>40)
-    soilList2.remove(40); 
+    soilList2.remove(40);
 
   for (int i=0; i<soilList2.size(); i++)
   {
@@ -712,7 +818,9 @@ void drawSensorHistory2()
   }
 }
 
-
+/**
+ * [drawMotorBtn draws button to turn off and on the motor]
+ */
 void drawMotorBtn()
 {
   int rectX=100;
@@ -728,7 +836,7 @@ void drawMotorBtn()
   textSize(20);
   text("ON", rectX+30, rectY+30);
   if (mouseX>=rectX && mouseX<=rectX+rectW && mouseY>=rectY && mouseY<=rectY+rectH)
-  {    
+  {
     if (mousePressed)
     {
       motorON=true;
@@ -739,8 +847,9 @@ void drawMotorBtn()
       text("ON", rectX+30, rectY+30);
 
       //////////send to serial port here
-      port.write('W');    
-      port.write("\n");
+      client.publish("status","On");
+      //port.write('W');
+      //port.write("\n");
     }
   }
 
@@ -761,13 +870,14 @@ void drawMotorBtn()
     if (mousePressed)
     {
       motorON=false;
+      client.publish("status", "Off");
       fill(255, 0, 0);
       rect(rectX2, rectY2, rectW2, rectH2, 0, 10, 10, 0);
       fill(255);
       textSize(20);
       text("OFF", rectX2+30, rectY+30);
-      port.write('S');
-      port.write("\n");      
+      //port.write('S');
+      //port.write("\n");
     }
   }
 
@@ -775,17 +885,19 @@ void drawMotorBtn()
   {
     fill(0);
     textSize(20);
+    //client.publish("status", "On");
     text("Motor is On", 100, 100);
-port.write('W');
-      port.write("\n");  
+  port.write('W');
+      port.write("\n");
       delay(10);
   } else if (!motorON)
   {
     fill(0);
     textSize(20);
+    //client.publish("status", "Off");
     text("Motor is Off", 100, 100);
     port.write('S');
-      port.write("\n");  
+      port.write("\n");
       delay(10);
   }
 }
